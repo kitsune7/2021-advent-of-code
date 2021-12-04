@@ -44,12 +44,24 @@ function getBoards(lines: string[]): Board[] {
 }
 
 function runBingo(boards: Board[], bingoNumbers: number[]) {
+  const previousWinningIndexes = new Set();
   for (let i = 0; i < bingoNumbers.length; i++) {
-    markBoards(bingoNumbers[i], boards);
+    const currentBingoNumber = bingoNumbers[i];
+    markBoards(currentBingoNumber, boards);
 
-    const winningBoardIndex = indexOfWinningBoard(boards);
-    if (winningBoardIndex) {
-      winGame(boards[winningBoardIndex], winningBoardIndex, bingoNumbers[i]);
+    const winningBoardIndexes = indexesOfWinningBoards(boards);
+    const newWinningIndexes = [];
+    winningBoardIndexes.forEach((index) => {
+      if (!previousWinningIndexes.has(index)) {
+        previousWinningIndexes.add(index);
+        newWinningIndexes.push(index);
+      }
+    });
+
+    if (previousWinningIndexes.size === boards.length) {
+      newWinningIndexes.forEach((index) => {
+        winGame(boards[index], index, currentBingoNumber);
+      });
       break;
     }
   }
@@ -67,14 +79,16 @@ function markBoards(selectedNumber: number, boards: Board[]) {
   });
 }
 
-function indexOfWinningBoard(boards: Board[]): number | null {
+function indexesOfWinningBoards(boards: Board[]): number[] {
+  const winningIndexes = [];
+
   for (let i = 0; i < boards.length; i++) {
     if (isWinningBoard(boards[i])) {
-      return i;
+      winningIndexes.push(i);
     }
   }
 
-  return null;
+  return winningIndexes;
 }
 
 function isWinningBoard(board: Board): boolean {
@@ -103,7 +117,7 @@ function winGame(
   winningBoardIndex: number,
   winningNumber: number
 ) {
-  console.log(`Winning board: ${winningBoardIndex}`);
+  console.log(`Last winning board: ${winningBoardIndex}`);
   console.log(`Answer: ${winningNumber * sumUnmarked(winningBoard)}`);
   printBoard(winningBoard);
 }
