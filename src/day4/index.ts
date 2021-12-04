@@ -13,11 +13,11 @@ type BingoRow = [
 ];
 type Board = [BingoRow, BingoRow, BingoRow, BingoRow, BingoRow];
 
-const dayFunction: DayFunction = (input: string[]) => {
+const dayFunction: DayFunction = (input: string[]): number => {
   const bingoNumbers = input[0].split(",").map((num) => Number(num));
   const boards = getBoards(input.slice(2));
 
-  runBingo(boards, bingoNumbers);
+  return runBingo(boards, bingoNumbers);
 };
 
 function getBoards(lines: string[]): Board[] {
@@ -43,7 +43,7 @@ function getBoards(lines: string[]): Board[] {
   return boards;
 }
 
-function runBingo(boards: Board[], bingoNumbers: number[]) {
+function runBingo(boards: Board[], bingoNumbers: number[]): number {
   const previousWinningIndexes = new Set();
   for (let i = 0; i < bingoNumbers.length; i++) {
     const currentBingoNumber = bingoNumbers[i];
@@ -59,10 +59,8 @@ function runBingo(boards: Board[], bingoNumbers: number[]) {
     });
 
     if (previousWinningIndexes.size === boards.length) {
-      newWinningIndexes.forEach((index) => {
-        winGame(boards[index], index, currentBingoNumber);
-      });
-      break;
+      const winningIndex = newWinningIndexes[0];
+      return winGame(boards[winningIndex], winningIndex, currentBingoNumber);
     }
   }
 }
@@ -116,10 +114,12 @@ function winGame(
   winningBoard: Board,
   winningBoardIndex: number,
   winningNumber: number
-) {
+): number {
   console.log(`Last winning board: ${winningBoardIndex}`);
   console.log(`Answer: ${winningNumber * sumUnmarked(winningBoard)}`);
   printBoard(winningBoard);
+
+  return winningNumber * sumUnmarked(winningBoard);
 }
 
 function sumUnmarked(board: Board): number {

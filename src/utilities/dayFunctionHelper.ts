@@ -1,6 +1,7 @@
 import { readdir } from "fs/promises";
+import { getInputLines } from "./parseInput";
 
-export type DayFunction = (input: string[]) => void;
+export type DayFunction = (input: string[]) => any;
 
 export const getLatestDayDir = async (): Promise<string> => {
   const latestDay = await getLatestDay();
@@ -27,3 +28,14 @@ export const getDayFunction = async (): Promise<DayFunction | void> => {
 
   return dayFunction?.default;
 };
+
+export async function runDayFunction(inputPath: string): Promise<any> {
+  const input = await getInputLines(inputPath);
+  const dayFunction = await getDayFunction();
+
+  if (dayFunction) {
+    return dayFunction(input);
+  } else {
+    console.error("Couldn't import day function");
+  }
+}

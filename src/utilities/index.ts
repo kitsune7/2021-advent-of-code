@@ -1,2 +1,2 @@
-export * from "./getDayFunction";
+export * from "./dayFunctionHelper";
 export * from "./parseInput";
