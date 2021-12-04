@@ -2,7 +2,12 @@ import { readdir } from "fs/promises";
 
 export type DayFunction = (input: string[]) => void;
 
-export const getLatestDayDir = (): Promise<string | void> => {
+export const getLatestDayDir = async (): Promise<string> => {
+  const latestDay = await getLatestDay();
+  return latestDay ? `day${latestDay}` : "";
+};
+
+export const getLatestDay = (): Promise<number | void> => {
   const srcPath = "src";
   const dirRegex = /^day\d+$/;
 
@@ -13,7 +18,6 @@ export const getLatestDayDir = (): Promise<string | void> => {
         .map((dir) => Number(dir.name.replace("day", "")))
     )
     .then((dayNumbers) => dayNumbers.sort((a, b) => (a < b ? -1 : 1)).pop())
-    .then((latestDay) => `day${latestDay}`)
     .catch((e) => console.error(e));
 };
 

@@ -1,6 +1,6 @@
 import { getInputLines, getDayFunction } from "./utilities";
 
-void (async function main() {
+(async function main() {
   const input = await getInputLines();
   const dayFunction = await getDayFunction();
 
