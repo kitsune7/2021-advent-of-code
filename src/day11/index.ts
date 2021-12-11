@@ -6,6 +6,7 @@ const dayFunction: DayFunction = (input: string[]) => {
   const flashed = new Set();
 
   const runStep = () => {
+    flashCount = 0;
     for (let row = 0; row < octomatrix.length; row++) {
       for (let col = 0; col < octomatrix[row].length; col++) {
         gainEnergy(row, col);
@@ -46,12 +47,19 @@ const dayFunction: DayFunction = (input: string[]) => {
     absorbEnergy(row + 1, col + 1);
   };
 
-  for (let i = 0; i < 100; i++) {
+  let step = 0;
+  while (
+    flashCount <
+    octomatrix.reduce((total, num) => {
+      return total + num.length;
+    }, 0)
+  ) {
     runStep();
+    step++;
   }
 
-  console.log(flashCount);
-  return flashCount;
+  console.log(step);
+  return step;
 };
 
 export default dayFunction;
