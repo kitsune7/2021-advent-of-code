@@ -36,7 +36,6 @@ const dayFunction: DayFunction = (input: string[]) => {
     }
   }
 
-  console.log(smallestFuelCost);
   return smallestFuelCost;
 };
 

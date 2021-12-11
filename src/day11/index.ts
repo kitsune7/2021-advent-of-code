@@ -58,7 +58,6 @@ const dayFunction: DayFunction = (input: string[]) => {
     step++;
   }
 
-  console.log(step);
   return step;
 };
 

@@ -78,9 +78,7 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   basinSizes.sort((a, b) => (a < b ? -1 : 1));
-  const result = basinSizes.pop() * basinSizes.pop() * basinSizes.pop();
-  console.log(result);
-  return result;
+  return basinSizes.pop() * basinSizes.pop() * basinSizes.pop();
 };
 
 export default dayFunction;

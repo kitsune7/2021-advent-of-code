@@ -57,7 +57,6 @@ const dayFunction: DayFunction = (input: string[]) => {
   const middleIndex = Math.floor(pointsPerLine.length / 2);
   pointsPerLine.sort((a, b) => (a < b ? -1 : 1));
 
-  console.log(pointsPerLine[middleIndex]);
   return pointsPerLine[middleIndex];
 };
 

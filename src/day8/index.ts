@@ -164,7 +164,6 @@ const dayFunction: DayFunction = (input: string[]) => {
     return total + digits;
   }, 0);
 
-  console.log(result);
   return result;
 };
 

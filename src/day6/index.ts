@@ -48,12 +48,10 @@ const dayFunction: DayFunction = (input: string[]) => {
     oneDayPasses();
   }
 
-  const total = Object.values(counterCounts).reduce(
+  return Object.values(counterCounts).reduce(
     (total: number, counts: number) => total + counts,
     0
   );
-  console.log(total);
-  return total;
 };
 
 export default dayFunction;

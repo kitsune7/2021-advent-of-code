@@ -70,7 +70,6 @@ const dayFunction: DayFunction = (input: string[]) => {
     }
   });
 
-  console.log(total);
   return total;
 };
 
