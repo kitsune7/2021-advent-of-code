@@ -15,7 +15,7 @@ const dayFunction: DayFunction = (input: string[]) => {
   const paths = new Set();
 
   let stack = ["start"];
-  const visited = new Set();
+  let visited = [];
 
   findPath("start");
   function findPath(currentNode: string) {
@@ -24,11 +24,25 @@ const dayFunction: DayFunction = (input: string[]) => {
       return;
     }
 
-    visited.clear();
-    stack.forEach((node) => visited.add(node));
-    const visitableNodes = nodes[currentNode].filter(
-      (node) => !visited.has(node) || node === node.toUpperCase()
-    );
+    visited = [];
+    stack.forEach((node) => {
+      if (!visited?.[node]) visited[node] = 1;
+      else visited[node]++;
+    });
+    const visitableNodes = nodes[currentNode].filter((node) => {
+      const isFreeNode = node === node.toUpperCase();
+      const hasVisitedNodeTwice = Object.keys(visited).some(
+        (visitedNode) =>
+          visitedNode === visitedNode.toLowerCase() && visited[visitedNode] > 1
+      );
+      const isStartOrEndNode = node === "start" || node === "end";
+
+      return (
+        isFreeNode ||
+        !visited?.[node] ||
+        (!hasVisitedNodeTwice && !isStartOrEndNode)
+      );
+    });
 
     visitableNodes.forEach((node) => {
       stack.push(node);
