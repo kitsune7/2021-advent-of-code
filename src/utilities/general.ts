@@ -9,3 +9,5 @@ export const incrementOrInstantiate = (
     obj[property] += incrementAmount;
   }
 };
+
+export const logicalSort = (a, b) => (a < b ? -1 : 1);
