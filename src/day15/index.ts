@@ -1,4 +1,5 @@
 import { DayFunction } from "../utilities";
+import { printMatrix, zeros } from "../utilities/general";
 
 type Point = number[];
 
@@ -12,13 +13,30 @@ const dayFunction: DayFunction = (input: string[]) => {
     return point[0] + "," + point[1];
   }
 
+  function greedyPath(startingPoint: Point, totalCost = 0) {
+    const [row, col] = startingPoint;
+    const currentValue = valueMatrix[row][col];
+    const downValue = valueMatrix?.[row + 1]?.[col] ?? Number.POSITIVE_INFINITY;
+    const rightValue =
+      valueMatrix?.[row]?.[col + 1] ?? Number.POSITIVE_INFINITY;
+
+    if (
+      downValue === Number.POSITIVE_INFINITY &&
+      rightValue === Number.POSITIVE_INFINITY
+    ) {
+      return totalCost + currentValue;
+    }
+    if (rightValue < downValue) {
+      return greedyPath([row, col + 1], totalCost + currentValue);
+    }
+    return greedyPath([row + 1, col], totalCost + currentValue);
+  }
+
   const coordinateToShortestPath: Record<string, number> = {};
-  const visited = new Set<string>();
 
   function getShortestPath(startingPoint: Point): number | null {
     const [row, col] = startingPoint;
     const coordinate = pointToString(startingPoint);
-    visited.add(coordinate);
 
     if (!valueMatrix?.[row]?.[col]) {
       return null;
@@ -39,8 +57,8 @@ const dayFunction: DayFunction = (input: string[]) => {
     let shortestPath = null;
     if (!downPath) shortestPath = currentValue + rightPath;
     else if (!rightPath) shortestPath = currentValue + downPath;
-    else if (rightPath < downPath) shortestPath = currentValue + rightPath;
-    else shortestPath = currentValue + downPath;
+    else if (downPath < rightPath) shortestPath = currentValue + downPath;
+    else shortestPath = currentValue + rightPath;
 
     coordinateToShortestPath[coordinate] = shortestPath;
     return shortestPath;
