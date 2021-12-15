@@ -1,44 +1,60 @@
 import { DayFunction } from "../utilities";
 
 const dayFunction: DayFunction = (input: string[]) => {
-  let startingPolymerTemplate = input[0];
+  const startingPolymerTemplate = input[0];
 
   const rules = {};
   input.slice(2).forEach((rule) => {
     const parts = rule.split(" -> ");
-    rules[parts[0]] = parts[1];
+    rules[parts[0]] = [parts[0][0] + parts[1], parts[1] + parts[0][1]];
   });
 
-  const getNextStep = (polymerTemplate) => {
-    let newPolymerTemplate = polymerTemplate[0];
-
-    for (let i = 0; i < polymerTemplate.length - 1; i++) {
-      const pair = polymerTemplate.slice(i, i + 2);
-      newPolymerTemplate += `${rules[pair]}${pair[1]}`;
-    }
-
-    return newPolymerTemplate;
-  };
-
-  for (let i = 0; i < 10; i++) {
-    startingPolymerTemplate = getNextStep(startingPolymerTemplate);
+  let pairs = {};
+  const letterCounts: Record<string, number> = {};
+  for (let i = 0; i < startingPolymerTemplate.length - 1; i++) {
+    incrementOrInstantiate(pairs, startingPolymerTemplate.slice(i, i + 2));
+  }
+  for (let i = 0; i < startingPolymerTemplate.length; i++) {
+    incrementOrInstantiate(letterCounts, startingPolymerTemplate[i]);
   }
 
-  const frequency = getFrequencyMap(startingPolymerTemplate);
-  const highestCount = Math.max(...Object.values(frequency));
-  const lowestCount = Math.min(...Object.values(frequency));
+  const getNextStep = () => {
+    const nextPairCounts = Object.assign({}, pairs);
+    Object.keys(pairs).forEach((pair) => {
+      rules[pair].forEach((rulePair) => {
+        incrementOrInstantiate(nextPairCounts, rulePair, pairs[pair]);
+      });
+      nextPairCounts[pair] -= pairs[pair];
+
+      incrementOrInstantiate(
+        letterCounts,
+        rules[pair][0].slice(1),
+        pairs[pair]
+      );
+    });
+    pairs = nextPairCounts;
+  };
+
+  for (let i = 0; i < 40; i++) {
+    getNextStep();
+  }
+
+  const highestCount = Math.max(...Object.values(letterCounts));
+  const lowestCount = Math.min(...Object.values(letterCounts));
 
   return highestCount - lowestCount;
 };
 
-const getFrequencyMap = (letters: string): Record<string, number> => {
-  const frequency: Record<string, number> = {};
-  Array.from(letters).forEach((letter) => {
-    if (!frequency?.[letter]) {
-      frequency[letter] = 1;
-    } else frequency[letter] += 1;
-  });
-  return frequency;
+const incrementOrInstantiate = (
+  obj: Record<string, number>,
+  property,
+  incrementAmount = 1
+) => {
+  if (typeof obj?.[property] === "undefined") {
+    obj[property] = incrementAmount;
+  } else {
+    obj[property] += incrementAmount;
+  }
 };
 
 export default dayFunction;
