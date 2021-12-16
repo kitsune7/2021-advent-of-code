@@ -2,6 +2,12 @@ import { DayFunction } from "../utilities";
 
 type LiteralValue = number;
 type BitsConsumed = number;
+type ExpressionValue = number;
+type SubPacket = {
+  typeId: number;
+  value: number;
+  version: number;
+};
 
 const dayFunction: DayFunction = (input: string[]) => {
   const hexToBin = {
@@ -29,8 +35,6 @@ const dayFunction: DayFunction = (input: string[]) => {
 
   const programData = {
     binary: binaryData,
-    versionTotal: 0,
-    subpackets: [],
   };
 
   function consumeBits(numberOfBits: number): string {
@@ -45,9 +49,7 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function getVersion(): number {
-    const version = getBinaryNumber(3);
-    programData.versionTotal += version;
-    return version;
+    return getBinaryNumber(3);
   }
 
   function getTypeId(): number {
@@ -68,7 +70,7 @@ const dayFunction: DayFunction = (input: string[]) => {
     return [parseInt(literalValue, 2), bitCount];
   }
 
-  function getOperator(): BitsConsumed {
+  function evaluateExpression(typeId: number): [BitsConsumed, ExpressionValue] {
     const lengthTypeId = consumeBits(1);
     let bitsUsed = 1;
 
@@ -76,18 +78,56 @@ const dayFunction: DayFunction = (input: string[]) => {
     const length = getBinaryNumber(lengthBits);
     bitsUsed += lengthBits;
 
-    if (lengthTypeId === "0") {
-      bitsUsed += getSubPacketsByLength(length);
-    } else {
-      bitsUsed += getSubPacketsByNumber(length);
-    }
+    const [bitsUsedBySubPackets, subPackets] =
+      lengthTypeId === "0"
+        ? getSubPacketsByLength(length)
+        : getSubPacketsByNumber(length);
+    bitsUsed += bitsUsedBySubPackets;
 
-    return bitsUsed;
+    switch (typeId) {
+      case 0:
+        console.log("+");
+        return [
+          bitsUsed,
+          subPackets.reduce((total, subPacket) => total + subPacket.value, 0),
+        ];
+      case 1:
+        console.log("*");
+        return [
+          bitsUsed,
+          subPackets.reduce((total, subPacket) => total * subPacket.value, 1),
+        ];
+      case 2:
+        console.log("min");
+        return [
+          bitsUsed,
+          Math.min(...subPackets.map((subPacket) => subPacket.value)),
+        ];
+      case 3:
+        console.log("max");
+        return [
+          bitsUsed,
+          Math.max(...subPackets.map((subPacket) => subPacket.value)),
+        ];
+      case 5:
+        console.log(">");
+        return [bitsUsed, subPackets[0].value > subPackets[1].value ? 1 : 0];
+      case 6:
+        console.log("<");
+        return [bitsUsed, subPackets[0].value < subPackets[1].value ? 1 : 0];
+      case 7:
+        console.log("===");
+        return [bitsUsed, subPackets[0].value === subPackets[1].value ? 1 : 0];
+      default:
+        console.error(`${typeId} isn't a valid typeId`);
+        return [bitsUsed, 0];
+    }
   }
 
   function getSubPackets(
     shouldContinue: (bitsUsed: number) => boolean
-  ): BitsConsumed {
+  ): [BitsConsumed, SubPacket[]] {
+    const subPackets = [];
     let bitsUsed = 0;
 
     while (shouldContinue(bitsUsed)) {
@@ -97,40 +137,49 @@ const dayFunction: DayFunction = (input: string[]) => {
 
       if (typeId === 4) {
         const [literalValue, bitsUsedForValue] = getLiteralValue();
+        console.log("literal value", literalValue);
         bitsUsed += bitsUsedForValue;
 
-        programData.subpackets.push({
+        subPackets.push({
           typeId,
           value: literalValue,
           version,
         });
       } else {
-        bitsUsed += getOperator();
+        const [bitsUsedForExpression, value] = evaluateExpression(typeId);
+        bitsUsed += bitsUsedForExpression;
+
+        subPackets.push({
+          typeId,
+          value,
+          version,
+        });
       }
     }
 
-    return bitsUsed;
+    return [bitsUsed, subPackets];
   }
 
-  function getSubPacketsByLength(length: number): BitsConsumed {
+  function getSubPacketsByLength(length: number): [BitsConsumed, SubPacket[]] {
     return getSubPackets((bitsUsed) => bitsUsed < length);
   }
 
-  function getSubPacketsByNumber(numberOfPackets: number): BitsConsumed {
+  function getSubPacketsByNumber(
+    numberOfPackets: number
+  ): [BitsConsumed, SubPacket[]] {
     let packetsConsumed = 0;
     return getSubPackets(() => packetsConsumed++ < numberOfPackets);
   }
 
-  const mainVersion = getVersion();
+  getVersion();
   const mainTypeId = getTypeId();
+  console.log("main type id", mainTypeId);
 
   if (mainTypeId === 4) {
-    getLiteralValue();
-  } else {
-    getOperator();
+    return getLiteralValue()[0];
   }
 
-  return programData.versionTotal;
+  return evaluateExpression(mainTypeId)[1];
 };
 
 export default dayFunction;
