@@ -8,30 +8,26 @@ const dayFunction: DayFunction = (input: string[]) => {
   );
 
   function add(a: SnailfishNumber, b: SnailfishNumber): SnailfishNumber {
-    //     console.log(`
-    //   ${JSON.stringify(a)}
-    // + ${JSON.stringify(b)}`);
-    // const sum = reduce([a, b]);
-    // console.log(`= ${JSON.stringify(sum)}`);
     return reduce([a, b]);
   }
 
   function reduce(number: SnailfishNumber): SnailfishNumber {
+    let numberToReduce: SnailfishNumber = JSON.parse(JSON.stringify(number));
     let explodeLocation;
     let largeIntegerIndex;
 
     while (
-      !!(explodeLocation = findExplodeLocation(number)) ||
-      (largeIntegerIndex = findLargeIntegerIndex(number)) !== -1
+      !!(explodeLocation = findExplodeLocation(numberToReduce)) ||
+      (largeIntegerIndex = findLargeIntegerIndex(numberToReduce)) !== -1
     ) {
       if (explodeLocation) {
-        explode(number, explodeLocation);
+        explode(numberToReduce, explodeLocation);
       } else if (largeIntegerIndex !== -1) {
-        number = split(number, largeIntegerIndex);
+        numberToReduce = split(numberToReduce, largeIntegerIndex);
       }
     }
 
-    return number;
+    return [...numberToReduce];
   }
 
   function getAtLocation(
@@ -194,10 +190,19 @@ const dayFunction: DayFunction = (input: string[]) => {
     );
   }
 
-  const sumResult = addInputNumbers();
-  const magnitudeResult = magnitude(sumResult);
+  let largestMagnitude = 0;
+  for (let i = 0; i < snailfishNumbers.length; i++) {
+    for (let j = 0; j < snailfishNumbers.length; j++) {
+      if (j === i) continue;
+      const numberMagnitude = magnitude(
+        add(snailfishNumbers[i], snailfishNumbers[j])
+      );
+      if (numberMagnitude > largestMagnitude)
+        largestMagnitude = numberMagnitude;
+    }
+  }
 
-  return magnitudeResult;
+  return largestMagnitude;
 };
 
 export default dayFunction;
