@@ -23,6 +23,34 @@ export const printMatrix = (
   });
 };
 
+export function countCellsWithValue<T = any>(
+  matrix: Matrix<T>,
+  value: T
+): number {
+  return matrix.reduce((total, row) => {
+    const rowTotal = row.reduce(
+      (rowTotal, cellValue) => rowTotal + (cellValue === value ? 1 : 0),
+      0
+    );
+    return total + rowTotal;
+  }, 0);
+}
+
+export const getAdjacentCells = (
+  matrix: Matrix,
+  row,
+  col,
+  outOfBoundsValue
+): Matrix => {
+  const get = (row, col) => matrixGet(matrix, row, col, outOfBoundsValue);
+
+  return [
+    [get(row - 1, col - 1), get(row - 1, col), get(row - 1, col + 1)],
+    [get(row, col - 1), get(row, col), get(row, col + 1)],
+    [get(row + 1, col - 1), get(row + 1, col), get(row + 1, col + 1)],
+  ];
+};
+
 export const identityMatrix = (numberOfDimensions = 2): Matrix<number> => {
   const matrix = [];
 
