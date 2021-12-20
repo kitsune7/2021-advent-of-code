@@ -102,19 +102,10 @@ const dayFunction: DayFunction = (input: string[]) => {
     outOfBoundsCharacter = imageEnhancementAlgorithm[position];
   }
 
-  console.log("starting image");
-  ensureClearBorders();
-  printMatrix(inputImage);
+  for (let i = 0; i < 50; i++) {
+    enhanceImage();
+  }
 
-  enhanceImage();
-  console.log("after enhancing image once");
-  printMatrix(inputImage);
-
-  enhanceImage();
-  console.log("after enhancing image twice");
-  printMatrix(inputImage);
-
-  // 7070 is too high
   return countCellsWithValue(inputImage, "#");
 };
 
