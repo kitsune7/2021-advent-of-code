@@ -18,6 +18,8 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
   scanners.push(currentScanner);
 
+  console.log(scanners);
+
   return;
 };
 
