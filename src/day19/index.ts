@@ -1,4 +1,4 @@
-import { DayFunction } from "../utilities";
+import { DayFunction, incrementOrInstantiate } from "../utilities";
 
 type Coordinate = [number, number];
 type Scanner = Coordinate[];
@@ -18,9 +18,27 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
   scanners.push(currentScanner);
 
-  console.log(scanners);
+  const distances: Record<string, number> = {};
+  scanners.forEach((scanner) => {
+    for (let i = 0; i < scanner.length; i++) {
+      for (let j = i + 1; j < scanner.length; j++) {
+        incrementOrInstantiate(
+          distances,
+          `${Math.abs(scanner[i][0] - scanner[j][0])},${Math.abs(
+            scanner[i][1] - scanner[j][1]
+          )}`
+        );
+      }
+    }
+    return distances;
+  });
 
-  return;
+  const totalBeacons = Object.values(distances).reduce(
+    (total, value) => total + (value > 1 ? 1 : 0),
+    0
+  );
+
+  return totalBeacons;
 };
 
 export default dayFunction;
