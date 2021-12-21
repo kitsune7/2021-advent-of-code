@@ -223,7 +223,6 @@ const dayFunction: DayFunction = (input: string[]) => {
         matches.push(match);
       }
     });
-    console.log(`matches`, matches);
 
     return matches;
   }
@@ -237,13 +236,35 @@ const dayFunction: DayFunction = (input: string[]) => {
     shiftedScanner.forEach((beacon) => fullMap.add(beacon.toString()));
   }
 
-  function addScannerBeaconsToMap(scanner: Scanner, index: number) {
-    const matches = getScannerMatches(scanner);
+  function transformScanner(scanner: Scanner, transformIndex: number) {
+    scanner.forEach((beacon, beaconIndex) => {
+      scanner[beaconIndex] = transformVector(
+        beacon,
+        xyTransforms[transformIndex]
+      ) as Coordinate;
+    });
+  }
 
-    if (matches.length >= minimumBeaconsOverlapping) {
-      console.log(`correct orientation?`, isCorrectOrientation(matches));
-      addShiftedBeaconsToMap(matches, index + 1);
+  function addScannerBeaconsToMap(scanner: Scanner, index: number) {
+    let matches = getScannerMatches(scanner);
+
+    for (let i = 0; i < xyTransforms.length; i++) {
+      // This code assumes that the first transform is the identity matrix
+      if (i > 0) {
+        transformScanner(scanner, i);
+        matches = getScannerMatches(scanner);
+      }
+
+      if (
+        matches.length >= minimumBeaconsOverlapping &&
+        isCorrectOrientation(matches)
+      ) {
+        addShiftedBeaconsToMap(matches, index + 1);
+        return;
+      }
     }
+
+    console.log(`Something's gone wrong.`);
   }
 
   scanners.slice(1).forEach(addScannerBeaconsToMap);
