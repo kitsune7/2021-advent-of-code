@@ -4,12 +4,12 @@ import {
   transformVector,
 } from "../utilities";
 
-type Coordinate = [number, number, number];
+type Coordinate = [number, number];
 type Scanner = Coordinate[];
 
 const dayFunction: DayFunction = (input: string[]) => {
   const scanners: Scanner[] = [];
-  const fullMap: Set<Coordinate> = new Set<Coordinate>();
+  const fullMap = new Set<string>();
   const minimumBeaconsOverlapping = 3; // 12 normally
 
   // Setup scanner input
@@ -24,28 +24,24 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
   scanners.push(currentScanner);
 
-  scanners[0].forEach((beacon) => fullMap.add(beacon));
+  // Set initial beacons on full map
+  scanners[0].forEach((beacon) => fullMap.add(beacon.toString()));
 
+  // Make a data structure to track scanner beacons with their distances to the other beacons in the scanner
   const scannersWithDistances = scanners.map((scanner) => {
     return scanner.map((coordinate) => ({
       coordinate,
-      distances: [],
+      distances: [] as string[],
     }));
   });
-
   scannersWithDistances.forEach((scanner, index) => {
     for (let i = 0; i < scanner.length; i++) {
       for (let j = 0; j < scanner.length; j++) {
         if (i === j) continue;
-        // const absoluteDistance = Math.sqrt(
-        //   (scanner[j][0] - scanner[i][0]) ** 2 +
-        //     (scanner[j][1] - scanner[i][1]) ** 2 +
-        //     (scanner[j][2] - scanner[i][2]) ** 2
-        // );
         const distanceString = `${Math.abs(
           scanner[i].coordinate[0] - scanner[j].coordinate[0]
         )},${Math.abs(scanner[i].coordinate[1] - scanner[j].coordinate[1])}`;
-        // ,${Math.abs(scanner[i][2] - scanner[j][2])}
+
         scanner[i].distances.push(distanceString);
       }
     }
@@ -54,40 +50,55 @@ const dayFunction: DayFunction = (input: string[]) => {
     });
   });
 
+  function calculateOffset(matches: Coordinate[][]): Coordinate {
+    const firstMatch = matches[0];
+    return [
+      firstMatch[1][0] - firstMatch[0][0],
+      firstMatch[1][1] - firstMatch[0][1],
+    ];
+  }
+
+  function shiftScanner(
+    offset: Coordinate,
+    scanner: Coordinate[]
+  ): Coordinate[] {
+    return scanner.map((beacon) =>
+      beacon.map((num, index) => num + offset[index])
+    ) as Coordinate[];
+  }
+
+  // Find which beacons in a scanner match
   scannersWithDistances.forEach((scanner, index) => {
+    console.log(`scanner ${index}`, scanner);
+    // We're ignoring the first scanner because it's already on the map
     if (index !== 0) {
-      const matches = scanner.filter((beacon) => {
+      const matches = [];
+      scanner.forEach((beacon) => {
         const matchingBeacon = scannersWithDistances[0].find((mainBeacon) => {
           let count = 0;
           for (let i = 0; i < beacon.distances.length; i++) {
-            mainBeacon.distances.includes(beacon.distances[i]);
+            if (mainBeacon.distances.includes(beacon.distances[i])) {
+              count++;
+            }
           }
           return count >= minimumBeaconsOverlapping - 1;
-        }).coordinate;
-        return [beacon.coordinate, matchingBeacon];
+        });
+        if (matchingBeacon) {
+          matches.push([beacon.coordinate, matchingBeacon.coordinate]);
+        }
       });
-      console.log(matches);
+
+      if (matches.length >= minimumBeaconsOverlapping) {
+        const offset = calculateOffset(matches);
+        const shiftedScanner = shiftScanner(offset, scanners[index]);
+        shiftedScanner.forEach((beacon) => fullMap.add(beacon.toString()));
+      }
+      console.log(`scanner ${index} matches`, matches);
     }
-    console.log(scanner);
   });
-  console.log(fullMap);
-  // console.log(distances);
+  console.log("fullMap", fullMap);
 
-  // const totalBeacons = Object.values(distances).reduce(
-  //   (total, value) => total + (value > 1 ? 1 : 0),
-  //   0
-  // );
-
-  // console.log(scanners[0][0]);
-  // console.log(transformVector(scanners[0][0], flipX));
-
-  // console.log(
-  //   Object.fromEntries(
-  //     Object.entries(distances).filter(([_, value]) => value > 1)
-  //   )
-  // );
-
-  // return totalBeacons;
+  return fullMap.size;
 };
 
 export default dayFunction;
@@ -97,3 +108,18 @@ export default dayFunction;
 //   (scanner[j][1] - scanner[i][1]) ** 2 +
 //   (scanner[j][2] - scanner[i][2]) ** 2
 // );
+
+// ,${Math.abs(scanner[i][2] - scanner[j][2])}
+
+// const totalBeacons = Object.values(distances).reduce(
+//   (total, value) => total + (value > 1 ? 1 : 0),
+//   0
+// );
+
+// console.log(
+//   Object.fromEntries(
+//     Object.entries(distances).filter(([_, value]) => value > 1)
+//   )
+// );
+
+// return totalBeacons;
