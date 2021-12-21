@@ -3,11 +3,11 @@ import { DayFunction } from "../utilities";
 const dayFunction: DayFunction = (input: string[]) => {
   const players = [
     {
-      position: Number(input[0].split("").pop()) - 1,
+      position: Number(input[0].split("").pop()),
       score: 0,
     },
     {
-      position: Number(input[1].split("").pop()) - 1,
+      position: Number(input[1].split("").pop()),
       score: 0,
     },
   ];
@@ -25,19 +25,20 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function takeTurn(playerIndex: number) {
-    const a = getNext();
-    const b = getNext();
-    const c = getNext();
-    const movement = a + b + c;
-    // const movement = getNext() + getNext() + getNext();
+    const firstRoll = getNext();
+    const secondRoll = getNext();
+    const thirdRoll = getNext();
+    const movement = firstRoll + secondRoll + thirdRoll;
 
     players[playerIndex].position =
-      (players[playerIndex].position + movement) % 10;
-    players[playerIndex].score += players[playerIndex].position + 1;
+      ((players[playerIndex].position + movement - 1) % 10) + 1;
+    players[playerIndex].score += players[playerIndex].position;
 
     console.log(
-      `Player ${playerIndex + 1} rolls ${a}+${b}+${c} and moves to space ${
-        players[playerIndex].position + 1
+      `Player ${
+        playerIndex + 1
+      } rolls ${firstRoll}+${secondRoll}+${thirdRoll} and moves to space ${
+        players[playerIndex].position
       } for a total score of ${players[playerIndex].score}`
     );
   }
@@ -54,7 +55,6 @@ const dayFunction: DayFunction = (input: string[]) => {
     (min, player) => (player.score < min ? player.score : min),
     Number.POSITIVE_INFINITY
   );
-  console.log(players, minScore, timesRolled);
 
   return minScore * timesRolled;
 };
