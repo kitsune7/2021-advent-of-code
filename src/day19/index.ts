@@ -78,14 +78,12 @@ const dayFunction: DayFunction = (input: string[]) => {
     shiftedScanner.forEach((beacon) => fullMap.add(beacon.toString()));
   }
 
-  console.log(`mainScannerData`, mainScannerData);
   scanners.slice(1).forEach((scanner, index) => {
     const matches = getScannerMatches(scanner);
-    console.log(matches);
 
-    // if (matches.length >= minimumBeaconsOverlapping) {
-    //   addShiftedBeaconsToMap(matches, index);
-    // }
+    if (matches.length >= minimumBeaconsOverlapping) {
+      addShiftedBeaconsToMap(matches, index + 1);
+    }
   });
 
   return fullMap.size;
