@@ -1,62 +1,89 @@
-import { DayFunction } from "../utilities";
+import { DayFunction, incrementOrInstantiate } from "../utilities";
+
+type Game = {
+  positions: [number, number];
+  scores: [number, number];
+};
 
 const dayFunction: DayFunction = (input: string[]) => {
-  const players = [
-    {
-      position: Number(input[0].split("").pop()),
-      score: 0,
-    },
-    {
-      position: Number(input[1].split("").pop()),
-      score: 0,
-    },
-  ];
+  const p1StartPosition = Number(input[0].split("").pop());
+  const p2StartPosition = Number(input[1].split("").pop());
+  const playerWinCounts = [0, 0];
+  const rollTotalFrequency = {
+    "3": 1,
+    "4": 3,
+    "5": 6,
+    "6": 7,
+    "7": 6,
+    "8": 3,
+    "9": 1,
+  };
 
-  let timesRolled = 0;
-  let deterministicDiceCounter = 1;
-  const diceMax = 100;
+  let possibleGames = {
+    [JSON.stringify({
+      positions: [p1StartPosition, p2StartPosition],
+      scores: [0, 0],
+    })]: 1,
+  };
 
-  function getNext(): number {
-    if (deterministicDiceCounter > diceMax) {
-      deterministicDiceCounter = 1;
-    }
-    timesRolled++;
-    return deterministicDiceCounter++;
-  }
+  function updatePossibleGames(playerIndex: number) {
+    const newPossibleGames = {};
 
-  function takeTurn(playerIndex: number) {
-    const firstRoll = getNext();
-    const secondRoll = getNext();
-    const thirdRoll = getNext();
-    const movement = firstRoll + secondRoll + thirdRoll;
+    Object.keys(rollTotalFrequency).forEach((rollTotal) => {
+      Object.keys(possibleGames).forEach((possibleGame) => {
+        const newCount =
+          possibleGames[possibleGame] * rollTotalFrequency[rollTotal];
+        const game: Game = JSON.parse(possibleGame);
 
-    players[playerIndex].position =
-      ((players[playerIndex].position + movement - 1) % 10) + 1;
-    players[playerIndex].score += players[playerIndex].position;
+        game.positions[playerIndex] =
+          ((Number(rollTotal) + game.positions[playerIndex] - 1) % 10) + 1;
+        game.scores[playerIndex] += game.positions[playerIndex];
 
-    console.log(
-      `Player ${
-        playerIndex + 1
-      } rolls ${firstRoll}+${secondRoll}+${thirdRoll} and moves to space ${
-        players[playerIndex].position
-      } for a total score of ${players[playerIndex].score}`
-    );
+        if (game.scores[playerIndex] >= 21) {
+          playerWinCounts[playerIndex] += newCount;
+        } else {
+          incrementOrInstantiate(
+            newPossibleGames,
+            JSON.stringify(game),
+            newCount
+          );
+        }
+      });
+    });
+
+    possibleGames = newPossibleGames;
   }
 
   let currentPlayerIndex = 0;
-  while (!players.find((player) => player.score >= 1000)) {
-    takeTurn(currentPlayerIndex);
+  while (Object.keys(possibleGames).length) {
+    updatePossibleGames(currentPlayerIndex);
 
     if (currentPlayerIndex === 0) currentPlayerIndex = 1;
     else if (currentPlayerIndex === 1) currentPlayerIndex = 0;
   }
 
-  const minScore = players.reduce(
-    (min, player) => (player.score < min ? player.score : min),
-    Number.POSITIVE_INFINITY
-  );
+  if (playerWinCounts[0] > playerWinCounts[1]) {
+    return playerWinCounts[0];
+  }
 
-  return minScore * timesRolled;
+  return playerWinCounts[1];
 };
 
 export default dayFunction;
+
+// const possibleValueCount = {};
+// function branch(total: number, level = 0) {
+//   if (level === 1) {
+//     incrementOrInstantiate(possibleValueCount, total + 1);
+//     incrementOrInstantiate(possibleValueCount, total + 2);
+//     incrementOrInstantiate(possibleValueCount, total + 3);
+//   } else {
+//     branch(total + 1, level + 1);
+//     branch(total + 2, level + 1);
+//     branch(total + 3, level + 1);
+//   }
+// }
+// branch(1);
+// branch(2);
+// branch(3);
+// console.log(possibleValueCount);
