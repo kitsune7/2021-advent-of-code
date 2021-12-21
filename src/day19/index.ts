@@ -1,11 +1,169 @@
-import {
-  DayFunction,
-  incrementOrInstantiate,
-  transformVector,
-} from "../utilities";
+import { DayFunction, identityMatrix, transformVector } from "../utilities";
 
 type Coordinate = [number, number];
 type Scanner = Coordinate[];
+
+const xyTransforms = [
+  [
+    [1, 0],
+    [0, 1],
+  ],
+  [
+    [-1, 0],
+    [0, 1],
+  ],
+  [
+    [1, 0],
+    [0, -1],
+  ],
+  [
+    [-1, 0],
+    [0, -1],
+  ],
+
+  [
+    [0, 1],
+    [1, 0],
+  ],
+  [
+    [0, -1],
+    [1, 0],
+  ],
+  [
+    [0, 1],
+    [-1, 0],
+  ],
+  [
+    [0, -1],
+    [-1, 0],
+  ],
+];
+
+const transforms = [
+  [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+  ],
+  [
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+  ],
+  [
+    [-1, 0, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+  ],
+  [
+    [1, 0, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+  ],
+  [
+    [1, 0, 0],
+    [0, -1, 0],
+    [0, 0, -1],
+  ],
+  [
+    [-1, 0, 0],
+    [0, -1, 0],
+    [0, 0, -1],
+  ],
+
+  [
+    [0, 1, 0],
+    [1, 0, 0],
+    [0, 0, 1],
+  ],
+  [
+    [0, -1, 0],
+    [1, 0, 0],
+    [0, 0, 1],
+  ],
+  [
+    [0, -1, 0],
+    [-1, 0, 0],
+    [0, 0, 1],
+  ],
+  [
+    [0, 1, 0],
+    [-1, 0, 0],
+    [0, 0, 1],
+  ],
+  [
+    [0, 1, 0],
+    [-1, 0, 0],
+    [0, 0, -1],
+  ],
+  [
+    [0, -1, 0],
+    [-1, 0, 0],
+    [0, 0, -1],
+  ],
+
+  [
+    [1, 0, 0],
+    [0, 0, 1],
+    [0, 1, 0],
+  ],
+  [
+    [-1, 0, 0],
+    [0, 0, 1],
+    [0, 1, 0],
+  ],
+  [
+    [-1, 0, 0],
+    [0, 0, -1],
+    [0, 1, 0],
+  ],
+  [
+    [1, 0, 0],
+    [0, 0, -1],
+    [0, 1, 0],
+  ],
+  [
+    [1, 0, 0],
+    [0, 0, -1],
+    [0, -1, 0],
+  ],
+  [
+    [-1, 0, 0],
+    [0, 0, -1],
+    [0, -1, 0],
+  ],
+
+  [
+    [0, 0, 1],
+    [0, 1, 0],
+    [1, 0, 0],
+  ],
+  [
+    [0, 0, -1],
+    [0, 1, 0],
+    [1, 0, 0],
+  ],
+  [
+    [0, 0, -1],
+    [0, -1, 0],
+    [1, 0, 0],
+  ],
+  [
+    [0, 0, 1],
+    [0, -1, 0],
+    [1, 0, 0],
+  ],
+  [
+    [0, 0, 1],
+    [0, -1, 0],
+    [-1, 0, 0],
+  ],
+  [
+    [0, 0, -1],
+    [0, -1, 0],
+    [-1, 0, 0],
+  ],
+];
 
 const dayFunction: DayFunction = (input: string[]) => {
   const scanners: Scanner[] = [];
@@ -65,6 +223,7 @@ const dayFunction: DayFunction = (input: string[]) => {
         matches.push(match);
       }
     });
+    console.log(`matches`, matches);
 
     return matches;
   }
@@ -73,18 +232,23 @@ const dayFunction: DayFunction = (input: string[]) => {
     matches: Coordinate[][],
     scannerIndex: number
   ) {
-    const offset = calculateOffset(matches);
+    const offset = calculateOffset(matches[0]);
     const shiftedScanner = shiftScanner(offset, scanners[scannerIndex]);
     shiftedScanner.forEach((beacon) => fullMap.add(beacon.toString()));
   }
 
-  scanners.slice(1).forEach((scanner, index) => {
+  function addScannerBeaconsToMap(scanner: Scanner, index: number) {
     const matches = getScannerMatches(scanner);
 
     if (matches.length >= minimumBeaconsOverlapping) {
+      console.log(`correct orientation?`, isCorrectOrientation(matches));
       addShiftedBeaconsToMap(matches, index + 1);
     }
-  });
+  }
+
+  scanners.slice(1).forEach(addScannerBeaconsToMap);
+
+  console.log(fullMap);
 
   return fullMap.size;
 };
@@ -111,12 +275,18 @@ function getBeaconDistances(
   return distances.sort();
 }
 
-function calculateOffset(matches: Coordinate[][]): Coordinate {
-  const firstMatch = matches[0];
+function isCorrectOrientation(matches: Coordinate[][]): boolean {
+  const firstOffset = calculateOffset(matches[0]).toString();
+  return matches
+    .slice(1)
+    .every((match) => calculateOffset(match).toString() === firstOffset);
+}
+
+function calculateOffset(match: Coordinate[]): Coordinate {
   return [
-    firstMatch[1][0] - firstMatch[0][0],
-    firstMatch[1][1] - firstMatch[0][1],
-    // firstMatch[1][2] - firstMatch[0][2],
+    match[1][0] - match[0][0],
+    match[1][1] - match[0][1],
+    // match[1][2] - match[0][2],
   ];
 }
 
