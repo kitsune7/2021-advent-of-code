@@ -1,5 +1,3 @@
-import chalk from "chalk";
-
 export type Coordinate = [number, number];
 export type Matrix<T = any> = T[][];
 
@@ -16,7 +14,7 @@ export const printMatrix = (
       row.reduce((line, item, colIndex) => {
         const output = `${line}${item}${options?.spaced ? " " : ""}`;
         return options?.mark?.includes([rowIndex, colIndex])
-          ? chalk.bgWhite(output)
+          ? output // chalk.bgWhite
           : output;
       }, "")
     );
@@ -50,6 +48,28 @@ export const getAdjacentCells = (
     [get(row + 1, col - 1), get(row + 1, col), get(row + 1, col + 1)],
   ];
 };
+
+export function transpose<T = any>(matrix: Matrix<T>): Matrix<T> {
+  const transposed = [];
+  for (let i = 0; i < matrix[0].length; i++) {
+    transposed.push(Array(matrix.length));
+  }
+
+  for (let i = 0; i < matrix.length; i++) {
+    for (let j = 0; j < matrix[i].length; j++) {
+      transposed[j][i] = matrix[i][j];
+    }
+  }
+  return transposed;
+}
+
+export function transformVector(
+  vector: Array<number>,
+  transform: Matrix<number>
+): Array<number> {
+  const result = matrixMultiply(transform, transpose<number>([vector]));
+  return transpose<number>(result)[0];
+}
 
 export const identityMatrix = (numberOfDimensions = 2): Matrix<number> => {
   const matrix = [];
