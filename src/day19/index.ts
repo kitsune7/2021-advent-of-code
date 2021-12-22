@@ -231,6 +231,18 @@ const dayFunction: DayFunction = (input: string[]) => {
     });
   }
 
+  function getTransformedScanner(scanner: Scanner, transformIndex: number) {
+    const transformedScanner = [];
+
+    scanner.forEach((beacon, beaconIndex) => {
+      transformedScanner.push(
+        transformVector(beacon, transforms[transformIndex]) as Coordinate
+      );
+    });
+
+    return transformedScanner;
+  }
+
   function addScannerBeaconsToMap(scanner: Scanner, index: number) {
     let matches = getScannerMatches(scanner);
 
@@ -239,6 +251,17 @@ const dayFunction: DayFunction = (input: string[]) => {
       if (i > 0) {
         transformScanner(scanner, i);
         matches = getScannerMatches(scanner);
+        if (
+          scanner.find(
+            (beacon) =>
+              beacon[0] - 20 === 459 &&
+              beacon[1] - 1133 === -707 &&
+              beacon[2] + 1061 === 401
+          )
+        ) {
+          console.log(`found potential match at transform index`, i);
+          console.log(scanner);
+        }
       }
 
       if (matches.length && isCorrectOrientation(matches)) {
@@ -250,7 +273,24 @@ const dayFunction: DayFunction = (input: string[]) => {
     console.log(`Something's gone wrong.`);
   }
 
-  scanners.slice(1).forEach(addScannerBeaconsToMap);
+  const transformed = [];
+  for (let i = 0; i < transforms.length; i++) {
+    transformed.push(
+      shiftScanner([-20, -1133, 1061], getTransformedScanner(scanners[2], i))
+    );
+    if (
+      transformed[transformed.length - 1].find(
+        (beacon) => beacon.toString() === "459,-707,401"
+      )
+    ) {
+      console.log(transformed);
+    }
+  }
+
+  scanners.slice(1).forEach((scanner, index) => {
+    console.log(`Adding scanner ${index + 1} to map`);
+    addScannerBeaconsToMap(scanner, index);
+  });
 
   return fullMap.size;
 };
