@@ -1,43 +1,7 @@
-import { DayFunction, identityMatrix, transformVector } from "../utilities";
+import { DayFunction, transformVector } from "../utilities";
 
-type Coordinate = [number, number];
+type Coordinate = [number, number, number];
 type Scanner = Coordinate[];
-
-const xyTransforms = [
-  [
-    [1, 0],
-    [0, 1],
-  ],
-  [
-    [-1, 0],
-    [0, 1],
-  ],
-  [
-    [1, 0],
-    [0, -1],
-  ],
-  [
-    [-1, 0],
-    [0, -1],
-  ],
-
-  [
-    [0, 1],
-    [1, 0],
-  ],
-  [
-    [0, -1],
-    [1, 0],
-  ],
-  [
-    [0, 1],
-    [-1, 0],
-  ],
-  [
-    [0, -1],
-    [-1, 0],
-  ],
-];
 
 const transforms = [
   [
@@ -168,8 +132,8 @@ const transforms = [
 const dayFunction: DayFunction = (input: string[]) => {
   const scanners: Scanner[] = [];
   const fullMap = new Set<string>();
-  const minimumBeaconsOverlapping = 3; // 12 normally
-  const mainScannerData: { beacon: Coordinate; distances: string[] }[] = [];
+  const minimumBeaconsOverlapping = 12;
+  let mainScannerData: { beacon: Coordinate; distances: string[] }[] = [];
 
   void (function setup() {
     // Add scanners from input
@@ -227,20 +191,42 @@ const dayFunction: DayFunction = (input: string[]) => {
     return matches;
   }
 
+  function recalculateDistances() {
+    const mainBeacons = mainScannerData.map((item) => item.beacon);
+    mainScannerData = mainScannerData.map((item, index) => ({
+      beacon: item.beacon,
+      distances: getBeaconDistances(mainBeacons, index),
+    }));
+  }
+
   function addShiftedBeaconsToMap(
     matches: Coordinate[][],
     scannerIndex: number
   ) {
     const offset = calculateOffset(matches[0]);
     const shiftedScanner = shiftScanner(offset, scanners[scannerIndex]);
-    shiftedScanner.forEach((beacon) => fullMap.add(beacon.toString()));
+    shiftedScanner.forEach((beacon) => {
+      fullMap.add(beacon.toString());
+
+      if (
+        !mainScannerData.find(
+          (mainBeacon) => mainBeacon.toString() === beacon.toString()
+        )
+      ) {
+        mainScannerData.push({
+          beacon,
+          distances: [],
+        });
+        recalculateDistances();
+      }
+    });
   }
 
   function transformScanner(scanner: Scanner, transformIndex: number) {
     scanner.forEach((beacon, beaconIndex) => {
       scanner[beaconIndex] = transformVector(
         beacon,
-        xyTransforms[transformIndex]
+        transforms[transformIndex]
       ) as Coordinate;
     });
   }
@@ -248,17 +234,14 @@ const dayFunction: DayFunction = (input: string[]) => {
   function addScannerBeaconsToMap(scanner: Scanner, index: number) {
     let matches = getScannerMatches(scanner);
 
-    for (let i = 0; i < xyTransforms.length; i++) {
+    for (let i = 0; i < transforms.length; i++) {
       // This code assumes that the first transform is the identity matrix
       if (i > 0) {
         transformScanner(scanner, i);
         matches = getScannerMatches(scanner);
       }
 
-      if (
-        matches.length >= minimumBeaconsOverlapping &&
-        isCorrectOrientation(matches)
-      ) {
+      if (matches.length && isCorrectOrientation(matches)) {
         addShiftedBeaconsToMap(matches, index + 1);
         return;
       }
@@ -268,8 +251,6 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   scanners.slice(1).forEach(addScannerBeaconsToMap);
-
-  console.log(fullMap);
 
   return fullMap.size;
 };
@@ -283,12 +264,12 @@ function getBeaconDistances(
   const distances = [];
 
   for (let i = 0; i < scanner.length; i++) {
-    if (i === beaconIndex) continue;
+    if (scanner[beaconIndex].toString() === scanner[i].toString()) continue;
 
     const xDistance = Math.abs(scanner[beaconIndex][0] - scanner[i][0]);
     const yDistance = Math.abs(scanner[beaconIndex][1] - scanner[i][1]);
-    // const zDistance = Math.abs(scanner[beaconIndex][2] - scanner[i][2]);
-    const distanceString = `${xDistance},${yDistance}`; // ,${zDistance}`;
+    const zDistance = Math.abs(scanner[beaconIndex][2] - scanner[i][2]);
+    const distanceString = `${xDistance},${yDistance},${zDistance}`;
 
     distances.push(distanceString);
   }
@@ -307,7 +288,7 @@ function calculateOffset(match: Coordinate[]): Coordinate {
   return [
     match[1][0] - match[0][0],
     match[1][1] - match[0][1],
-    // match[1][2] - match[0][2],
+    match[1][2] - match[0][2],
   ];
 }
 
