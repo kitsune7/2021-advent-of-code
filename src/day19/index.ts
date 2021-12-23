@@ -11,16 +11,6 @@ const transforms = [
   ],
   [
     [-1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-  ],
-  [
-    [-1, 0, 0],
-    [0, -1, 0],
-    [0, 0, 1],
-  ],
-  [
-    [1, 0, 0],
     [0, -1, 0],
     [0, 0, 1],
   ],
@@ -31,33 +21,23 @@ const transforms = [
   ],
   [
     [-1, 0, 0],
-    [0, -1, 0],
+    [0, 1, 0],
     [0, 0, -1],
   ],
 
   [
-    [0, 1, 0],
-    [1, 0, 0],
-    [0, 0, 1],
-  ],
-  [
     [0, -1, 0],
     [1, 0, 0],
     [0, 0, 1],
   ],
   [
-    [0, -1, 0],
-    [-1, 0, 0],
-    [0, 0, 1],
-  ],
-  [
     [0, 1, 0],
     [-1, 0, 0],
     [0, 0, 1],
   ],
   [
     [0, 1, 0],
-    [-1, 0, 0],
+    [1, 0, 0],
     [0, 0, -1],
   ],
   [
@@ -67,28 +47,18 @@ const transforms = [
   ],
 
   [
-    [1, 0, 0],
-    [0, 0, 1],
-    [0, 1, 0],
-  ],
-  [
     [-1, 0, 0],
     [0, 0, 1],
     [0, 1, 0],
   ],
   [
-    [-1, 0, 0],
-    [0, 0, -1],
-    [0, 1, 0],
-  ],
-  [
     [1, 0, 0],
     [0, 0, -1],
     [0, 1, 0],
   ],
   [
     [1, 0, 0],
-    [0, 0, -1],
+    [0, 0, 1],
     [0, -1, 0],
   ],
   [
@@ -99,17 +69,49 @@ const transforms = [
 
   [
     [0, 0, 1],
-    [0, 1, 0],
     [1, 0, 0],
+    [0, 1, 0],
   ],
   [
     [0, 0, -1],
+    [-1, 0, 0],
     [0, 1, 0],
-    [1, 0, 0],
   ],
   [
-    [0, 0, -1],
+    [0, 0, 1],
+    [-1, 0, 0],
     [0, -1, 0],
+  ],
+  [
+    [0, 0, -1],
+    [1, 0, 0],
+    [0, -1, 0],
+  ],
+
+  [
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 0, 0],
+  ],
+  [
+    [0, -1, 0],
+    [0, 0, -1],
+    [1, 0, 0],
+  ],
+  [
+    [0, 1, 0],
+    [0, 0, -1],
+    [-1, 0, 0],
+  ],
+  [
+    [0, -1, 0],
+    [0, 0, 1],
+    [-1, 0, 0],
+  ],
+
+  [
+    [0, 0, -1],
+    [0, 1, 0],
     [1, 0, 0],
   ],
   [
@@ -119,7 +121,7 @@ const transforms = [
   ],
   [
     [0, 0, 1],
-    [0, -1, 0],
+    [0, 1, 0],
     [-1, 0, 0],
   ],
   [
@@ -239,58 +241,57 @@ const dayFunction: DayFunction = (input: string[]) => {
         transformVector(beacon, transforms[transformIndex]) as Coordinate
       );
     });
+    console.log(transformedScanner);
 
     return transformedScanner;
   }
 
-  function addScannerBeaconsToMap(scanner: Scanner, index: number) {
+  function addScannerBeaconsToMap(scanner: Scanner, index: number): boolean {
     let matches = getScannerMatches(scanner);
 
     for (let i = 0; i < transforms.length; i++) {
       // This code assumes that the first transform is the identity matrix
       if (i > 0) {
-        transformScanner(scanner, i);
-        matches = getScannerMatches(scanner);
-        if (
-          scanner.find(
-            (beacon) =>
-              beacon[0] - 20 === 459 &&
-              beacon[1] - 1133 === -707 &&
-              beacon[2] + 1061 === 401
-          )
-        ) {
-          console.log(`found potential match at transform index`, i);
-          console.log(scanner);
-        }
+        const transformed = getTransformedScanner(scanner, i);
+        matches = getScannerMatches(transformed);
+        console.log(matches.length);
+        if (matches.length) transformScanner(scanner, i);
       }
 
       if (matches.length && isCorrectOrientation(matches)) {
+        console.log(
+          `isCorrectOrientation(matches)`,
+          isCorrectOrientation(matches)
+        );
         addShiftedBeaconsToMap(matches, index + 1);
-        return;
+        return true;
       }
     }
 
-    console.log(`Something's gone wrong.`);
+    return false;
   }
 
-  const transformed = [];
-  for (let i = 0; i < transforms.length; i++) {
-    transformed.push(
-      shiftScanner([-20, -1133, 1061], getTransformedScanner(scanners[2], i))
-    );
-    if (
-      transformed[transformed.length - 1].find(
-        (beacon) => beacon.toString() === "459,-707,401"
-      )
-    ) {
-      console.log(transformed);
-    }
-  }
-
+  let retryIndexes = [];
   scanners.slice(1).forEach((scanner, index) => {
     console.log(`Adding scanner ${index + 1} to map`);
-    addScannerBeaconsToMap(scanner, index);
+    if (!addScannerBeaconsToMap(scanner, index)) {
+      console.log(`Scanner ${index + 1} couldn't be added`);
+      retryIndexes.push(index);
+    }
   });
+  while (retryIndexes.length) {
+    const successful = [];
+    for (let i = 0; i < retryIndexes.length; i++) {
+      console.log(`Retrying adding scanner ${retryIndexes[i] + 1} to map`);
+      if (addScannerBeaconsToMap(scanners[retryIndexes[i]], retryIndexes[i])) {
+        successful.push(retryIndexes[i]);
+      }
+    }
+    retryIndexes = retryIndexes.filter((index) => !successful.includes(index));
+    console.log(fullMap.size);
+  }
+
+  console.log(fullMap);
 
   return fullMap.size;
 };
@@ -306,10 +307,16 @@ function getBeaconDistances(
   for (let i = 0; i < scanner.length; i++) {
     if (scanner[beaconIndex].toString() === scanner[i].toString()) continue;
 
+    const absoluteDistance = Math.sqrt(
+      (scanner[beaconIndex][0] - scanner[i][0]) ** 2 +
+        (scanner[beaconIndex][1] - scanner[i][1]) ** 2 +
+        (scanner[beaconIndex][2] - scanner[i][2]) ** 2
+    );
+
     const xDistance = Math.abs(scanner[beaconIndex][0] - scanner[i][0]);
     const yDistance = Math.abs(scanner[beaconIndex][1] - scanner[i][1]);
     const zDistance = Math.abs(scanner[beaconIndex][2] - scanner[i][2]);
-    const distanceString = `${xDistance},${yDistance},${zDistance}`;
+    const distanceString = `${absoluteDistance}`;
 
     distances.push(distanceString);
   }
