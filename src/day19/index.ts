@@ -34,9 +34,10 @@ const dayFunction: DayFunction = (input: string[]) => {
         if (shiftedScannerIndexes.includes(i)) continue
         const scanner = scanners[i]
 
-        console.log(`Adding scanner ${i} to map`)
+        console.log(`Adding scanner ${i} to shifted scanner list`)
         if (getShiftedScanner(scanner, i)) {
           shiftedScannerIndexes.push(i)
+          console.log(`Added scanner ${i} to shifted scanner list successfully`)
         } else {
           console.log(`Failed to add scanner ${i}`)
         }
@@ -45,30 +46,41 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function getShiftedScanner(scanner: Scanner, index: number): boolean {
+    console.log(`There are ${shiftedScanners.length} shifted scanners.`)
+
     // Use scanner 0 as the main point of reference
     if (!shiftedScanners.length) {
       shiftedScanners.push(scanner)
-      return
+      return true
     }
 
-    shiftedScanners.forEach((shiftedScanner, shiftedScannerIndex) => {
+    for (
+      let shiftedScannerIndex = 0;
+      shiftedScannerIndex < shiftedScanners.length;
+      shiftedScannerIndex++
+    ) {
+      const shiftedScanner = shiftedScanners[shiftedScannerIndex]
+
       console.log(
         `Checking scanner ${index} for matches against (shifted) scanner ${shiftedScannerIndex}`
       )
 
       for (let i = 0; i < transforms.length; i++) {
         const transformed = getTransformedScanner(scanner, transforms[i])
-        // Order here matters. Try switching the order of the two is the orientation calculation is wrong
         const matches = getScannerMatches(transformed, shiftedScanner)
 
         if (matches.length) {
+          console.log(`Found ${matches.length} matches`)
           if (isCorrectOrientation(matches)) {
+            console.log(matches)
+            console.log('Orientation is correct. Adding shifted scanner.')
+            console.log(`shifted:`, shiftScanner(calculateOffset(matches[0]), transformed))
             shiftedScanners.push(shiftScanner(calculateOffset(matches[0]), transformed))
             return true
           }
         }
       }
-    })
+    }
 
     return false
   }
@@ -143,6 +155,7 @@ const dayFunction: DayFunction = (input: string[]) => {
 
   function isCorrectOrientation(matches: Array<[Coordinate, Coordinate]>): boolean {
     const firstOffset = calculateOffset(matches[0]).toString()
+    console.log(`firstOffset`, firstOffset)
     return matches.slice(1).every((match) => calculateOffset(match).toString() === firstOffset)
   }
 
