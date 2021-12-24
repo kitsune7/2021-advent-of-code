@@ -159,7 +159,6 @@ const dayFunction: DayFunction = (input: string[]) => {
 
   function isCorrectOrientation(matches: Array<[Coordinate, Coordinate]>): boolean {
     const firstOffset = calculateOffset(matches[0]).toString()
-    console.log(`firstOffset`, firstOffset)
     return matches.slice(1).every((match) => calculateOffset(match).toString() === firstOffset)
   }
 
