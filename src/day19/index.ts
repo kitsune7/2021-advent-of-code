@@ -7,6 +7,7 @@ type Scanner = Coordinate[]
 const dayFunction: DayFunction = (input: string[]) => {
   const scanners: Scanner[] = getScannersFromInput()
   const shiftedScanners: Scanner[] = []
+  const offsets = Array(scanners.length)
   const minimumBeaconsOverlapping = 12
 
   function getScannersFromInput(): Scanner[] {
@@ -51,6 +52,7 @@ const dayFunction: DayFunction = (input: string[]) => {
     // Use scanner 0 as the main point of reference
     if (!shiftedScanners.length) {
       shiftedScanners.push(scanner)
+      offsets[0] = [0, 0, 0]
       return true
     }
 
@@ -72,10 +74,10 @@ const dayFunction: DayFunction = (input: string[]) => {
         if (matches.length) {
           console.log(`Found ${matches.length} matches`)
           if (isCorrectOrientation(matches)) {
-            console.log(matches)
             console.log('Orientation is correct. Adding shifted scanner.')
-            console.log(`shifted:`, shiftScanner(calculateOffset(matches[0]), transformed))
-            shiftedScanners.push(shiftScanner(calculateOffset(matches[0]), transformed))
+            const offset = calculateOffset(matches[0])
+            offsets[index] = offset
+            shiftedScanners.push(shiftScanner(offset, transformed))
             return true
           }
         }
@@ -95,8 +97,6 @@ const dayFunction: DayFunction = (input: string[]) => {
     return transformedScanner
   }
 
-  // I could probably optimize this by exiting as soon as I have 2 matches because that's all that's needed to check the
-  // orientation.
   function getScannerMatches(
     scannerA: Scanner,
     scannerB: Scanner
@@ -111,6 +111,11 @@ const dayFunction: DayFunction = (input: string[]) => {
 
         if (matchingDistanceCount >= minimumBeaconsOverlapping - 1) {
           matches.push([beaconA, beaconB])
+
+          // Optimization to cut down on processing time
+          if (matches.length === 2) {
+            return matches
+          }
         }
       })
     })
@@ -143,7 +148,6 @@ const dayFunction: DayFunction = (input: string[]) => {
         const distanceA = distancesA[i]
         const distanceB = distancesB[j]
 
-        // I could try Math.floor or Math.ceil if there's some kind of odd JS error due to floating point imprecision
         if (distanceA === distanceB) {
           count++
         }
@@ -167,18 +171,32 @@ const dayFunction: DayFunction = (input: string[]) => {
     return scanner.map((beacon) => beacon.map((num, index) => num + offset[index])) as Scanner
   }
 
-  function getUniqueBeaconCount(): number {
-    const fullMap = new Set<string>()
+  function getLargestManhattanDistance(): number {
+    let largestManhattanDistance = 0
 
-    shiftedScanners.forEach((scanner) =>
-      scanner.forEach((beacon) => fullMap.add(beacon.toString()))
+    for (let i = 0; i < offsets.length; i++) {
+      for (let j = 0; j < offsets.length; j++) {
+        if (i === j) continue
+        const manhattanDistance = getManhattanDistance(offsets[i], offsets[j])
+        if (manhattanDistance > largestManhattanDistance) {
+          largestManhattanDistance = manhattanDistance
+        }
+      }
+    }
+
+    return largestManhattanDistance
+  }
+
+  function getManhattanDistance(offsetA: Coordinate, offsetB: Coordinate): number {
+    return (
+      Math.abs(offsetA[0] - offsetB[0]) +
+      Math.abs(offsetA[1] - offsetB[1]) +
+      Math.abs(offsetA[2] - offsetB[2])
     )
-
-    return fullMap.size
   }
 
   getShiftedScanners()
-  return getUniqueBeaconCount()
+  return getLargestManhattanDistance()
 }
 
 export default dayFunction
