@@ -38,21 +38,26 @@ const dayFunction: DayFunction = (input: string[]) => {
     }
 
     const overlapVolumes = overlapping.map((range) => countRange(range))
-    overlapping = Array.from(new Set(overlapping))
 
+    // optimizations
+    overlapping = Array.from(new Set(overlapping))
     if (overlapVolumes.find((volume) => volume >= rangeVolume)) {
       return rangeVolume
     }
+    console.log(`overlapVolumes`, overlapVolumes)
 
-    const overlapVolume = overlapping.reduce(
-      (total: number, overlappingRange: Range) => total + countRange(overlappingRange),
+    const overlapVolume = overlapVolumes.reduce(
+      (total: number, volume: number) => total + volume,
       0
     )
 
     let duplicateOverlapVolume = 0
     if (overlapping.length >= 2) {
       for (let i = 0; i < overlapping.length; i++) {
-        duplicateOverlapVolume += countOverlapVolume(overlapping[i], overlapping.slice(i + 1))
+        duplicateOverlapVolume += countOverlapVolume(
+          overlapping[i],
+          overlapping.slice(i + 1).filter((range) => range.toString() !== overlapping[i].toString())
+        )
       }
     }
 
