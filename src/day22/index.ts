@@ -25,33 +25,55 @@ const dayFunction: DayFunction = (input: string[]) => {
   let onCount = 0
   const counted: Range[] = []
 
+  function countOverlapVolume(range: Range, rangesToCheck: Range[]): number {
+    console.log(`(countOverlapVolume) checking range`, range, `for overlaps with`, rangesToCheck)
+    let overlapping: Range[] = []
+    const rangeVolume = countRange(range)
+
+    for (let i = 0; i < rangesToCheck.length; i++) {
+      const overlap = findRangeOverlap(range, rangesToCheck[i])
+      if (overlap) {
+        overlapping.push(overlap)
+      }
+    }
+
+    const overlapVolumes = overlapping.map((range) => countRange(range))
+    overlapping = Array.from(new Set(overlapping))
+
+    if (overlapVolumes.find((volume) => volume >= rangeVolume)) {
+      return rangeVolume
+    }
+
+    const overlapVolume = overlapping.reduce(
+      (total: number, overlappingRange: Range) => total + countRange(overlappingRange),
+      0
+    )
+
+    let duplicateOverlapVolume = 0
+    if (overlapping.length >= 2) {
+      for (let i = 0; i < overlapping.length; i++) {
+        duplicateOverlapVolume += countOverlapVolume(overlapping[i], overlapping.slice(i + 1))
+      }
+    }
+
+    return overlapVolume - duplicateOverlapVolume
+  }
+
   function countCubes() {
-    for (let i = 0; i < instructions.length; i++) {
-      const instruction = instructions[i]
+    for (let instructionIndex = 0; instructionIndex < instructions.length; instructionIndex++) {
+      const instruction = instructions[instructionIndex]
       const rangeCount = countRange(instruction.range)
+      console.log(`instruction`, instruction)
 
       if (instruction.on) {
+        console.log(`rangeCount`, rangeCount)
         onCount += rangeCount
-        console.log(`Adding ${rangeCount} to onCount for ${instruction.range}`)
-
-        let overlaps = []
-        for (let j = 0; j < counted.length; j++) {
-          const overlapRange = findRangeOverlap(instruction.range, instructions[j].range)
-          if (overlapRange) {
-            overlaps.push(overlapRange)
-            console.log(`Found overlap of ${countRange(overlapRange)}. ${overlapRange}`)
-            onCount -= countRange(overlapRange)
-          }
+        const overlapVolume = countOverlapVolume(instruction.range, counted)
+        console.log(`overlapVolume`, overlapVolume)
+        if (overlapVolume < 0) {
+          throw new Error(`Cannot have a negative overlap volume`)
         }
-
-        for (let i = 0; i < overlaps.length; i++) {
-          for (let j = i + 1; j < overlaps.length; j++) {
-            const overlapRange = findRangeOverlap(overlaps[i], overlaps[j])
-            if (overlapRange) {
-              onCount += countRange(overlapRange)
-            }
-          }
-        }
+        onCount -= overlapVolume
       }
 
       counted.push(instruction.range)
@@ -59,7 +81,6 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function countRange(range: Range): number {
-    if (!range) return 0
     return (
       (range[0][1] - range[0][0] + 1) *
       (range[1][1] - range[1][0] + 1) *
@@ -68,6 +89,10 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function findRangeOverlap(rangeA: Range, rangeB: Range): Range | null {
+    if (!rangeA.length || !rangeB.length) {
+      return null
+    }
+
     const xOverlap = findPairOverlap(rangeA[0], rangeB[0])
     const yOverlap = findPairOverlap(rangeA[1], rangeB[1])
     const zOverlap = findPairOverlap(rangeA[1], rangeB[1])
