@@ -26,23 +26,18 @@ const dayFunction: DayFunction = (input: string[]) => {
     let onCount = 0
     const counted: Range[] = []
 
-    for (
-      let instructionIndex = instructions.length - 1;
-      instructionIndex >= 0;
-      instructionIndex--
-    ) {
-      const instruction = instructions[instructionIndex]
-      const rangeCount = countRange(instruction.range)
+    for (let i = instructions.length - 1; i >= 0; i--) {
+      const instruction = instructions[i]
 
       if (instruction.on) {
-        const overlaps: Instruction[] = []
-        counted.forEach((countedRange) => {
+        const rangeCount = countRange(instruction.range)
+        onCount += rangeCount
+
+        const overlaps: Instruction[] = counted.reduce((overlaps, countedRange) => {
           const overlapRange = findRangeOverlap(instruction.range, countedRange)
-          if (overlapRange) {
-            overlaps.push({ on: true, range: overlapRange })
-          }
-        })
-        onCount += rangeCount - countCubes(overlaps)
+          return overlapRange ? [...overlaps, { on: true, range: overlapRange }] : overlaps
+        }, [])
+        onCount -= countCubes(overlaps)
       }
 
       counted.push(instruction.range)
