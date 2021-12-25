@@ -8,19 +8,15 @@ type Instruction = {
 }
 
 const dayFunction: DayFunction = (input: string[]) => {
-  const instructions: Instruction[] = input
-    .map((line) => ({
-      on: line.startsWith('on'),
-      range: line.split(',').map((rangeString) =>
-        rangeString
-          .replace(/(on|off| |[xyz]=)/g, '')
-          .split('..')
-          .map(Number)
-      ) as Range,
-    }))
-    .filter((instruction) =>
-      instruction.range.every((pair) => pair.every((num) => num >= -50 && num <= 50))
-    )
+  const instructions: Instruction[] = input.map((line) => ({
+    on: line.startsWith('on'),
+    range: line.split(',').map((rangeString) =>
+      rangeString
+        .replace(/(on|off| |[xyz]=)/g, '')
+        .split('..')
+        .map(Number)
+    ) as Range,
+  }))
 
   function countCubes(instructions: Instruction[]): number {
     let onCount = 0
