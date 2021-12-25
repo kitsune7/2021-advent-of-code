@@ -21,68 +21,34 @@ const dayFunction: DayFunction = (input: string[]) => {
     .filter((instruction) =>
       instruction.range.every((pair) => pair.every((num) => num >= -50 && num <= 50))
     )
-    .reverse()
-  let onCount = 0
-  const counted: Range[] = []
 
-  function countOverlapVolume(range: Range, rangesToCheck: Range[]): number {
-    console.log(`(countOverlapVolume) checking range`, range, `for overlaps with`, rangesToCheck)
-    let overlapping: Range[] = []
-    const rangeVolume = countRange(range)
+  function countCubes(instructions: Instruction[]): number {
+    let onCount = 0
+    const counted: Range[] = []
 
-    for (let i = 0; i < rangesToCheck.length; i++) {
-      const overlap = findRangeOverlap(range, rangesToCheck[i])
-      if (overlap) {
-        overlapping.push(overlap)
-      }
-    }
-
-    const overlapVolumes = overlapping.map((range) => countRange(range))
-
-    // optimizations
-    overlapping = Array.from(new Set(overlapping))
-    if (overlapVolumes.find((volume) => volume >= rangeVolume)) {
-      return rangeVolume
-    }
-    console.log(`overlapVolumes`, overlapVolumes)
-
-    const overlapVolume = overlapVolumes.reduce(
-      (total: number, volume: number) => total + volume,
-      0
-    )
-
-    let duplicateOverlapVolume = 0
-    if (overlapping.length >= 2) {
-      for (let i = 0; i < overlapping.length; i++) {
-        duplicateOverlapVolume += countOverlapVolume(
-          overlapping[i],
-          overlapping.slice(i + 1).filter((range) => range.toString() !== overlapping[i].toString())
-        )
-      }
-    }
-
-    return overlapVolume - duplicateOverlapVolume
-  }
-
-  function countCubes() {
-    for (let instructionIndex = 0; instructionIndex < instructions.length; instructionIndex++) {
+    for (
+      let instructionIndex = instructions.length - 1;
+      instructionIndex >= 0;
+      instructionIndex--
+    ) {
       const instruction = instructions[instructionIndex]
       const rangeCount = countRange(instruction.range)
-      console.log(`instruction`, instruction)
 
       if (instruction.on) {
-        console.log(`rangeCount`, rangeCount)
-        onCount += rangeCount
-        const overlapVolume = countOverlapVolume(instruction.range, counted)
-        console.log(`overlapVolume`, overlapVolume)
-        if (overlapVolume < 0) {
-          throw new Error(`Cannot have a negative overlap volume`)
-        }
-        onCount -= overlapVolume
+        const overlaps: Instruction[] = []
+        counted.forEach((countedRange) => {
+          const overlapRange = findRangeOverlap(instruction.range, countedRange)
+          if (overlapRange) {
+            overlaps.push({ on: true, range: overlapRange })
+          }
+        })
+        onCount += rangeCount - countCubes(overlaps)
       }
 
       counted.push(instruction.range)
     }
+
+    return onCount
   }
 
   function countRange(range: Range): number {
@@ -94,10 +60,6 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function findRangeOverlap(rangeA: Range, rangeB: Range): Range | null {
-    if (!rangeA.length || !rangeB.length) {
-      return null
-    }
-
     const xOverlap = findPairOverlap(rangeA[0], rangeB[0])
     const yOverlap = findPairOverlap(rangeA[1], rangeB[1])
     const zOverlap = findPairOverlap(rangeA[1], rangeB[1])
@@ -110,23 +72,17 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function findPairOverlap(pairA: Pair, pairB: Pair): Pair | null {
-    if (pairB[0] >= pairA[0] && pairB[1] <= pairA[1]) {
-      return [pairB[0], pairB[1]]
+    const start = Math.max(pairA[0], pairB[0])
+    const end = Math.min(pairA[1], pairB[1])
+
+    if (end - start <= 0) {
+      return null
     }
-    if (pairB[0] < pairA[0] && pairB[1] > pairA[1]) {
-      return [pairA[0], pairA[1]]
-    }
-    if (pairB[0] < pairA[0] && pairB[1] >= pairA[0] && pairB[1] <= pairA[1]) {
-      return [pairA[0], pairB[1]]
-    }
-    if (pairB[0] >= pairA[0] && pairB[0] <= pairA[1] && pairB[1] > pairA[1]) {
-      return [pairB[0], pairA[1]]
-    }
-    return null
+
+    return [start, end]
   }
 
-  countCubes()
-  return onCount
+  return countCubes(instructions)
 }
 
 export default dayFunction
