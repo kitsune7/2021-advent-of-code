@@ -57,7 +57,7 @@ const dayFunction: DayFunction = (input: string[]) => {
   function findRangeOverlap(rangeA: Range, rangeB: Range): Range | null {
     const xOverlap = findPairOverlap(rangeA[0], rangeB[0])
     const yOverlap = findPairOverlap(rangeA[1], rangeB[1])
-    const zOverlap = findPairOverlap(rangeA[1], rangeB[1])
+    const zOverlap = findPairOverlap(rangeA[2], rangeB[2])
 
     if (xOverlap && yOverlap && zOverlap) {
       return [xOverlap, yOverlap, zOverlap]
