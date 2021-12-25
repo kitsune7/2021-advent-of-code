@@ -1,4 +1,4 @@
-import { createMatrix, DayFunction } from '../utilities'
+import { DayFunction } from '../utilities'
 
 const dayFunction: DayFunction = (input: string[]) => {
   let seaCucumbers: Array<string[]> = input.map((line) => line.split(''))
