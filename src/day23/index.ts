@@ -53,7 +53,11 @@ const dayFunction: DayFunction = (input: string[]) => {
       totalCost: 0,
     }
 
-    while (currentTree.possibleSolutions === null || currentTree.parent !== null) {
+    while (
+      currentTree.possibleSolutions === null ||
+      currentTree.parent !== null ||
+      currentTree.possibleSolutions.some((solution) => !solution.dead)
+    ) {
       console.log(`Examining tree with total cost of ${currentTree.totalCost}.`)
       printBoard(currentTree.board)
 
@@ -91,7 +95,7 @@ const dayFunction: DayFunction = (input: string[]) => {
             tree.totalCost < lowestCostTree.totalCost ? tree : lowestCostTree
           )
 
-        if (!lowestCostBranch.length) {
+        if (!lowestCostBranch) {
           console.log(`All branches on this tree are dead, so this tree is dead too.`)
           currentTree.dead = true
         } else {
@@ -136,7 +140,7 @@ const dayFunction: DayFunction = (input: string[]) => {
   function getBoardAfterMove(board: Board, move: Move): Board {
     const boardCopy = board.map((row) => row.slice())
     boardCopy[move.start[0]][move.start[1]] = '.'
-    boardCopy[move.start[0]][move.start[1]] = board[move.start[0]][move.start[1]]
+    boardCopy[move.end[0]][move.end[1]] = board[move.start[0]][move.start[1]]
     return boardCopy
   }
 
