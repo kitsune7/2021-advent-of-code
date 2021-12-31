@@ -58,14 +58,14 @@ const dayFunction: DayFunction = (input: string[]) => {
       currentTree.parent !== null ||
       currentTree.possibleSolutions.some((solution) => !solution.dead)
     ) {
-      console.log(`Examining tree with total cost of ${currentTree.totalCost}.`)
-      printBoard(currentTree.board)
+      // console.log(`Examining tree with total cost of ${currentTree.totalCost}.`)
+      // printBoard(currentTree.board)
 
       if (currentTree.dead) {
-        console.log('Tree is dead. Moving to parent.')
+        // console.log('Tree is dead. Moving to parent.')
         currentTree = currentTree.parent
       } else if (currentTree.possibleSolutions === null) {
-        console.log(`This tree hasn't been visited yet. Checking possible solutions.`)
+        // console.log(`This tree hasn't been visited yet. Checking possible solutions.`)
         const possibleSolutions = getPossibleSolutions(currentTree).filter(
           (solution) => solution.totalCost < lowestCost
         )
@@ -75,31 +75,32 @@ const dayFunction: DayFunction = (input: string[]) => {
 
         if (completedSolution) {
           console.log(`Found a path with a new lowest cost of ${completedSolution.totalCost}`)
+          printSolution(completedSolution)
           currentTree.possibleSolutions = [completedSolution] // Other branches don't matter because they'd all cost more
           lowestCost = completedSolution.totalCost // We know this has the lowest cost because it didn't get filtered out
           completedSolution.dead = true
           currentTree.dead = true
         } else if (!possibleSolutions.length) {
-          console.log(
-            `This tree doesn't having any possible solutions or all possible solutions cost more than the lowest cost. Marking it dead.`
-          )
+          // console.log(
+          //   `This tree doesn't having any possible solutions or all possible solutions cost more than the lowest cost. Marking it dead.`
+          // )
           currentTree.dead = true
         } else {
-          console.log(`Adding ${possibleSolutions.length} possible solutions to current tree`)
+          // console.log(`Adding ${possibleSolutions.length} possible solutions to current tree`)
           currentTree.possibleSolutions = possibleSolutions
         }
       } else {
-        const lowestCostBranch = currentTree.possibleSolutions
-          .filter((solution) => !solution.dead)
-          .reduce((lowestCostTree, tree) =>
+        const livingBranches = currentTree.possibleSolutions.filter((solution) => !solution.dead)
+
+        if (!livingBranches.length) {
+          // console.log(`All branches on this tree are dead, so this tree is dead too.`)
+          currentTree.dead = true
+        } else {
+          const lowestCostBranch = livingBranches.reduce((lowestCostTree, tree) =>
             tree.totalCost < lowestCostTree.totalCost ? tree : lowestCostTree
           )
 
-        if (!lowestCostBranch) {
-          console.log(`All branches on this tree are dead, so this tree is dead too.`)
-          currentTree.dead = true
-        } else {
-          console.log(`We're going to explore the branch with the lowest total cost`)
+          // console.log(`We're going to explore the branch with the lowest total cost`)
           currentTree = lowestCostBranch
         }
       }
@@ -269,6 +270,28 @@ const dayFunction: DayFunction = (input: string[]) => {
 
 function printBoard(board: Matrix) {
   board.forEach((line) => console.log(line.join('')))
+  console.log()
+}
+
+// Run from solution leaf node
+function printSolution(tree: SolutionTree) {
+  if (tree?.move) {
+    console.log(`(working backwards) Total cost: ${tree.totalCost}`)
+    printMove(tree.parent.board, tree.board, tree.move.cost)
+
+    printSolution(tree.parent)
+  } else {
+    console.log('Starting board')
+    printBoard(tree.board)
+  }
+}
+
+function printMove(board: Board, newBoard: Board, cost: number) {
+  console.log(`Previous\tNext`)
+  for (let i = 0; i < board.length; i++) {
+    console.log(`${board[i].join('')}\t${newBoard[i].join('')}`)
+  }
+  console.log(`Cost: ${cost}`)
   console.log()
 }
 
