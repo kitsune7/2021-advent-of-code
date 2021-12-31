@@ -8,9 +8,11 @@ type Move = {
 }
 type SolutionTree = {
   board: Board
-  complete?: boolean
+  dead: boolean
   move?: Move
-  possibleSolutions: Set<SolutionTree>
+  parent: SolutionTree | null
+  possibleSolutions: Array<SolutionTree> | null
+  totalCost: number
 }
 type Node = {
   character: string
@@ -26,11 +28,7 @@ const dayFunction: DayFunction = (input: string[]) => {
     (line.length === lineLength ? line : line + '  ').split('')
   )
 
-  const completeBoardString = `#############
-#...........#
-###A#B#C#D###
-  #A#B#C#D#  
-  #########  `
+  const completeBoardString = `#############\n#...........#\n###A#B#C#D###\n  #A#B#C#D#  \n  #########  `
   const validNodes = ['A', 'B', 'C', 'D']
   const nodeToDestinationColumnIndex = {
     A: 3,
@@ -45,20 +43,88 @@ const dayFunction: DayFunction = (input: string[]) => {
     D: 1000,
   }
 
-  function getPossibleSolutions(board: Board): Set<SolutionTree> {
-    const possibleSolutions: Set<SolutionTree> = new Set()
-    getNodes(board).forEach((node) => {
-      const possibleMoves = getPossibleMoves(board, node)
+  function findLowestCost(): number {
+    let lowestCost = Number.POSITIVE_INFINITY
+    let currentTree = {
+      board: initialBoard,
+      dead: false,
+      parent: null,
+      possibleSolutions: null,
+      totalCost: 0,
+    }
+
+    while (currentTree.possibleSolutions === null || currentTree.parent !== null) {
+      console.log(`Examining tree with total cost of ${currentTree.totalCost}.`)
+      printBoard(currentTree.board)
+
+      if (currentTree.dead) {
+        console.log('Tree is dead. Moving to parent.')
+        currentTree = currentTree.parent
+      } else if (currentTree.possibleSolutions === null) {
+        console.log(`This tree hasn't been visited yet. Checking possible solutions.`)
+        const possibleSolutions = getPossibleSolutions(currentTree).filter(
+          (solution) => solution.totalCost < lowestCost
+        )
+        const completedSolution = possibleSolutions.find(
+          (solution) => solution.possibleSolutions !== null
+        )
+
+        if (completedSolution) {
+          console.log(`Found a path with a new lowest cost of ${completedSolution.totalCost}`)
+          currentTree.possibleSolutions = [completedSolution] // Other branches don't matter because they'd all cost more
+          lowestCost = completedSolution.totalCost // We know this has the lowest cost because it didn't get filtered out
+          completedSolution.dead = true
+          currentTree.dead = true
+        } else if (!possibleSolutions.length) {
+          console.log(
+            `This tree doesn't having any possible solutions or all possible solutions cost more than the lowest cost. Marking it dead.`
+          )
+          currentTree.dead = true
+        } else {
+          console.log(`Adding ${possibleSolutions.length} possible solutions to current tree`)
+          currentTree.possibleSolutions = possibleSolutions
+        }
+      } else {
+        const lowestCostBranch = currentTree.possibleSolutions
+          .filter((solution) => !solution.dead)
+          .reduce((lowestCostTree, tree) =>
+            tree.totalCost < lowestCostTree.totalCost ? tree : lowestCostTree
+          )
+
+        if (!lowestCostBranch.length) {
+          console.log(`All branches on this tree are dead, so this tree is dead too.`)
+          currentTree.dead = true
+        } else {
+          console.log(`We're going to explore the branch with the lowest total cost`)
+          currentTree = lowestCostBranch
+        }
+      }
+    }
+
+    return lowestCost
+  }
+
+  function getPossibleSolutions(tree: SolutionTree): SolutionTree[] {
+    const possibleSolutions: SolutionTree[] = []
+
+    getNodes(tree.board).forEach((node) => {
+      const possibleMoves = getPossibleMoves(tree.board, node)
+
       possibleMoves.forEach((move) => {
-        const newBoard = getBoardAfterMove(board, move)
-        possibleSolutions.add({
+        const newBoard = getBoardAfterMove(tree.board, move)
+        const isComplete = isCompleteBoard(newBoard)
+
+        possibleSolutions.push({
           board: newBoard,
-          complete: isCompleteBoard(newBoard),
+          dead: false,
           move,
-          possibleSolutions: new Set(),
+          parent: tree,
+          possibleSolutions: isComplete ? [] : null,
+          totalCost: tree.totalCost + move.cost,
         })
       })
     })
+
     return possibleSolutions
   }
 
@@ -68,23 +134,16 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function getBoardAfterMove(board: Board, move: Move): Board {
-    return board.map((row, rowIndex) =>
-      row.map((col, colIndex) => {
-        const positionString = `${rowIndex},${colIndex}`
-        if (positionString === move.start.toString()) {
-          return '.'
-        }
-        if (positionString === move.end.toString()) {
-          return board[move.start[0]][move.start[1]]
-        }
-        return col
-      })
-    )
+    const boardCopy = board.map((row) => row.slice())
+    boardCopy[move.start[0]][move.start[1]] = '.'
+    boardCopy[move.start[0]][move.start[1]] = board[move.start[0]][move.start[1]]
+    return boardCopy
   }
 
   function getPossibleMoves(board: Board, node: Node): Move[] {
-    const accessibleOpenSpaces = getAccessibleOpenSpaces(board, [node.row, node.col])
+    if (isNodeFinishedMoving(board, node)) return []
 
+    const accessibleOpenSpaces = getAccessibleOpenSpaces(board, [node.row, node.col])
     const validSpaces = accessibleOpenSpaces.filter(
       (position) =>
         isNodeFinishedMoving(board, {
@@ -107,7 +166,7 @@ const dayFunction: DayFunction = (input: string[]) => {
   function getAccessibleOpenSpaces(
     board: Board,
     position: Position,
-    usedPositions: Set<string> = new Set()
+    usedPositions = []
   ): Position[] {
     const [row, col] = position
     const adjacentPositions = (
@@ -123,14 +182,17 @@ const dayFunction: DayFunction = (input: string[]) => {
       ] as Position[]
     ).filter(
       (position) =>
-        !usedPositions.has(position.toString()) && board[position[0]][position[1]] === '.'
+        board[position[0]][position[1]] === '.' &&
+        !usedPositions.find(
+          (usedPosition) => usedPosition[0] === position[0] && usedPosition[1] === position[1]
+        )
     )
 
     if (!adjacentPositions.length) {
-      return positionSetToPositionArray(usedPositions)
+      return usedPositions
     }
 
-    adjacentPositions.forEach((position) => usedPositions.add(position.toString()))
+    usedPositions.push(...adjacentPositions)
 
     const accessibleOpenSpaces = adjacentPositions
       .map((position) => getAccessibleOpenSpaces(board, position, usedPositions))
@@ -139,12 +201,10 @@ const dayFunction: DayFunction = (input: string[]) => {
       (position, i) =>
         !accessibleOpenSpaces
           .slice(0, i)
-          .find((otherPosition) => otherPosition.toString() === position.toString())
+          .find(
+            (otherPosition) => otherPosition[0] === position[0] && otherPosition[1] === position[1]
+          )
     )
-  }
-
-  function positionSetToPositionArray(positions: Set<string>): Array<Position> {
-    return Array.from(positions).map((position) => position.split(',').map(Number) as Position)
   }
 
   function isNodeFinishedMoving(board: Board, node: Node): boolean {
@@ -200,11 +260,12 @@ const dayFunction: DayFunction = (input: string[]) => {
     }
   }
 
-  return
+  return findLowestCost()
 }
 
 function printBoard(board: Matrix) {
   board.forEach((line) => console.log(line.join('')))
+  console.log()
 }
 
 export default dayFunction
