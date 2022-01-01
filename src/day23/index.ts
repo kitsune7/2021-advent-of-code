@@ -64,7 +64,10 @@ const dayFunction: DayFunction = (input: string[]) => {
       // printBoard(currentTree.board)
 
       if (currentTree.dead) {
-        // console.log('Tree is dead. Moving to parent.')
+        // Enable garbage collection on unused nodes to free up memory
+        currentTree.board = []
+        currentTree.possibleSolutions = []
+
         currentTree = currentTree.parent
       } else if (currentTree.possibleSolutions === null) {
         // console.log(`This tree hasn't been visited yet. Checking possible solutions.`)
@@ -76,8 +79,8 @@ const dayFunction: DayFunction = (input: string[]) => {
         )
 
         if (completedSolution) {
-          console.log(`Found a path with a new lowest cost of ${completedSolution.totalCost}`)
           printSolution(completedSolution)
+          console.log(`Found a path with a new lowest cost of ${completedSolution.totalCost}`)
           currentTree.possibleSolutions = [completedSolution] // Other branches don't matter because they'd all cost more
           lowestCost = completedSolution.totalCost // We know this has the lowest cost because it didn't get filtered out
           completedSolution.dead = true
