@@ -22,11 +22,12 @@ type Node = {
 type Board = Matrix<string>
 
 const dayFunction: DayFunction = (input: string[]) => {
-  const initialBoard = input
-    .slice(0, 3)
-    .concat(
-      ['  #D#C#B#A#  ', '  #D#B#A#C#  '].concat(input.slice(3).map((line) => line + '  '.split('')))
-    )
+  const initialBoard = [
+    ...input.slice(0, 3).map((line) => line.split('')),
+    '  #D#C#B#A#  '.split(''),
+    '  #D#B#A#C#  '.split(''),
+    ...input.slice(3).map((line) => (line + '  ').split('')),
+  ]
 
   const completeBoardString = `#############\n#...........#\n###A#B#C#D###\n  #A#B#C#D#  \n  #A#B#C#D#  \n  #A#B#C#D#  \n  #########  `
   const validNodes = ['A', 'B', 'C', 'D']
