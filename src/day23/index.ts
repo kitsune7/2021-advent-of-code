@@ -42,6 +42,7 @@ const dayFunction: DayFunction = (input: string[]) => {
     C: 100,
     D: 1000,
   }
+  const hallwayRow = 1
 
   function findLowestCost(): number {
     let lowestCost = Number.POSITIVE_INFINITY
@@ -228,7 +229,6 @@ const dayFunction: DayFunction = (input: string[]) => {
   }
 
   function isHallway(row: number) {
-    const hallwayRow = 1
     return row === hallwayRow
   }
 
@@ -257,11 +257,22 @@ const dayFunction: DayFunction = (input: string[]) => {
 
   function endPositionToMove(end: Position, node: Node): Move {
     return {
-      cost:
-        (Math.abs(end[0] - node.row) + Math.abs(end[1] - node.col)) *
-        nodeToMoveCost[node.character],
+      cost: calculateCost(end, node),
       end,
       start: [node.row, node.col],
+    }
+  }
+
+  function calculateCost(end: Position, node: Node): number {
+    const horizontalSpaces = Math.abs(end[1] - node.col)
+    const costPerSpace = nodeToMoveCost[node.character]
+
+    if (isHallway(node.row)) {
+      return (Math.abs(end[0] - node.row) + horizontalSpaces) * costPerSpace
+    } else {
+      const spacesToHallway = node.row - hallwayRow
+      const spacesToRoom = end[0] - hallwayRow
+      return (spacesToHallway + spacesToRoom + horizontalSpaces) * costPerSpace
     }
   }
 
