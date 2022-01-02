@@ -1,93 +1,50 @@
 import { DayFunction } from '../utilities'
 
-type Variable = 'w' | 'x' | 'y' | 'z'
-type State = Record<Variable, number> & { inputs: number[] }
-
 const dayFunction: DayFunction = (instructions: string[]) => {
-  const variables = ['w', 'x', 'y', 'z']
-  const commandToFunction = {
-    add: add,
-    mul: mul,
-    div: div,
-    mod: mod,
-    eql: eql,
+  /*
+   * There's a set of 18 instructions for every digit. The commands are the same in every set except for 3 numbers.
+   *
+   * The instructions basically make z act like a stack in base 26. If the fifth line of an instruction set uses 1, z
+   * doesn't grow smaller, so it's essentially a push. If z uses 26 on that line, it pops off the last base 26 digit.
+   *
+   * I think x can be ignored except on pop instruction sets. In those circumstances, `x - some integer` needs to be equal
+   * to the last z digit, which should be equal to a digit from the model number + the integer added to y in the instruction
+   * set where the value at the top of the stack was added. Knowing this, we determine a set of constraints that model
+   * numbers need to meet and then we can just find the highest model number that matches those constraints! :D
+   */
+  const numberOfInputs = 14
+  const instructionSetLength = 18
+  const instructionSets = Array(numberOfInputs)
+
+  for (let i = 0; i < instructions.length / instructionSetLength; i++) {
+    instructionSets[i] = instructions.slice(
+      i * instructionSetLength,
+      (i + 1) * instructionSetLength
+    )
   }
 
-  function inp(state: State, a: Variable) {
-    state[a] = state.inputs.pop()
-  }
+  const simplifiedInstructionData = instructionSets.map((instructionSet) => [
+    Number(instructionSet[4].split(' ').pop()), // Either 1 or 26
+    Number(instructionSet[5].split(' ').pop()), // An integer constant added to x
+    Number(instructionSet[15].split(' ').pop()), // An integer constant added to y
+  ])
 
-  function evaluate(state: State, data: string): number {
-    if (variables.includes(data)) {
-      return state[data]
-    }
-    return Number(data)
-  }
-
-  function add(state: State, a: Variable, b: string) {
-    state[a] = state[a] + evaluate(state, b)
-  }
-
-  function mul(state: State, a: Variable, b: string) {
-    state[a] = state[a] * evaluate(state, b)
-  }
-
-  function div(state: State, a: Variable, b: string) {
-    state[a] = Math.floor(state[a] / evaluate(state, b))
-  }
-
-  function mod(state: State, a: Variable, b: string) {
-    state[a] = state[a] % evaluate(state, b)
-  }
-
-  function eql(state: State, a: Variable, b: string) {
-    state[a] = state[a] === evaluate(state, b) ? 1 : 0
-  }
-
-  function isValidModelNumber(modelNumber: number): boolean {
-    const modelNumberInputs = modelNumber.toString().split('').map(Number)
-
-    if (modelNumberInputs.length !== 14 || modelNumberInputs.some((num) => num === 0)) {
-      return false
-    }
-
-    const state: State = {
-      inputs: modelNumberInputs.reverse(),
-      w: 0,
-      x: 0,
-      y: 0,
-      z: 0,
-    }
-
-    for (let i = 0; i < instructions.length; i++) {
-      runInstruction(instructions[i], state)
-    }
-
-    return !state.z
-  }
-
-  function runInstruction(instruction: string, state: State) {
-    if (instruction.startsWith('inp')) {
-      inp(state, instruction.split(' ')[1] as Variable)
+  const stack = []
+  simplifiedInstructionData.forEach((data, i) => {
+    if (data[0] === 1) {
+      console.log(`Push i${i} + ${data[2]}`)
+      stack.push([i, data[2]])
     } else {
-      const [command, a, b] = instruction.split(' ')
-      commandToFunction[command](state, a, b)
-    }
-  }
+      const popped = stack.pop()
+      const reducedOperand = popped[1] + data[1]
 
-  for (let modelNumber = 99999999999999; modelNumber >= 11111111111111; modelNumber--) {
-    let modelNumberString = modelNumber.toString()
-    if (modelNumberString.includes('0')) {
-      modelNumberString.replace(/0/g, '9')
-      continue
+      console.log(
+        `Pop i${popped[0]} from stack. i${i} == i${popped[0]} + ${popped[1]} + (${data[1]}) == i${
+          popped[0]
+        } + ${reducedOperand < 0 ? `(${reducedOperand})` : reducedOperand}`
+      )
     }
-
-    if (isValidModelNumber(modelNumber)) {
-      return modelNumber
-    }
-  }
-
-  return 11111111111111
+  })
 }
 
 export default dayFunction
