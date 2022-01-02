@@ -30,7 +30,7 @@ const dayFunction: DayFunction = (instructions: string[]) => {
   ])
 
   const stack = []
-  let highestModelNumber = '99999999999999'
+  let highestModelNumber = '11111111111111'
   simplifiedInstructionData.forEach((data, i) => {
     if (data[0] === 1) {
       console.log(`Push i${i} + ${data[2]}`)
@@ -39,15 +39,15 @@ const dayFunction: DayFunction = (instructions: string[]) => {
       const popped = stack.pop()
       const reducedOperand = popped[1] + data[1]
 
-      if (reducedOperand < 0) {
+      if (reducedOperand > 0) {
         highestModelNumber =
           highestModelNumber.slice(0, i) +
-          (9 + reducedOperand).toString() +
+          (1 + reducedOperand).toString() +
           highestModelNumber.slice(i + 1)
-      } else {
+      } else if (reducedOperand < 0) {
         highestModelNumber =
           highestModelNumber.slice(0, popped[0]) +
-          (9 - reducedOperand).toString() +
+          (1 - reducedOperand).toString() +
           highestModelNumber.slice(popped[0] + 1)
       }
 
